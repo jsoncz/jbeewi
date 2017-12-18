@@ -3,8 +3,22 @@ from bluepy.btle import * # Import bluetoothctl library
 import time
 import random
 import sys
+import speech_recognition as sr
+import pygame
+from pygame.locals import *
 
-
+#WINDOW SETUP
+pygame.init()
+BLACK = (0,0,0)
+WIDTH = 102
+HEIGHT = 102
+x = (WIDTH / 2)
+y = (HEIGHT /2)
+window = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
+logo = pygame.image.load("jbeewi.png")
+listen = pygame.image.load("listen.png")
+window.blit (logo, (1,5))
+pygame.display.flip()
 class BeewiSmartBulb:
     TURN_ON  = bytes([85,16, 1,13,10])
     TURN_OFF = bytes([85,16, 0,13,10])
@@ -159,7 +173,10 @@ class BeewiSmartBulb:
 MAC_ADDRESS = "7C:EC:79:68:BB:25"
 myBulb = BeewiSmartBulb(MAC_ADDRESS)    # This will create a new BeewiSmartBulb object and connect to the device
 #myBulb.turnOn()                       # This will turn on your bulb
+r = sr.Recognizer()   
+looper = True
 
+                            
 def pink ():
     r = 168
     g = 29
@@ -175,10 +192,45 @@ def randCol ():
     print (r,g,b)
 
 def loop (speed):
-    while 1 == True:
+    
+    while looper == True:
         randCol()
+        #bright = random.randint(0,9)
+        #myBulb.setBrightness(bright)
         time.sleep(speed)
+        
+    speak() 
+       
+def speak():                                                                                
+    with sr.Microphone() as source:                                                                       
+        print("Speak:")          
 
+        audio = r.listen(source)   
+     
+    try:
+        print("You said " + r.recognize_google(audio))
+        if r.recognize_google(audio) == "off":
+            myBulb.turnOff()
+        
+        if r.recognize_google(audio) == "on":
+            myBulb.turnOn()
+        
+        if r.recognize_google(audio) == "romantic":
+            pink()
+
+        if r.recognize_google(audio) == "random":
+            loop(1)
+        
+        if r.recognize_google(audio) == "stop":
+            looper = False
+
+    except sr.UnknownValueError:
+        print("Could not understand audio")
+        
+    except sr.RequestError as e:
+        print("Could not request results; {0}".format(e))
+
+   
 if sys.argv[1] == "loop":
     loop(float(sys.argv[2]))
     print ("arg is loop")
@@ -186,5 +238,18 @@ if sys.argv[1] == "loop":
 if sys.argv[1] == "pink":
     pink()
 
-#loop(.1)
-#myBulb.turnOff()                        # This will turn off your bulb
+running = True
+while running:
+    window.fill((0, 0, 0)) # fill screen black
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            #exit and close the window
+            pygame.quit()
+            sys.exit()
+        elif event.type == pygame.KEYDOWN:       
+            #if the right arrow is pressed
+            while event.key == K_RIGHT:
+                window.blit(listen, (1,1))
+                pygame.display.flip()
+                speak()
+                     
